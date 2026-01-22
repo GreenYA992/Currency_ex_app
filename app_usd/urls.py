@@ -1,6 +1,9 @@
 from django.urls import path
-from .views import get_current_usd
+from . import views
 
 urlpatterns = [
-    path("get-current-usd/", get_current_usd, name="get_current_usd")
+    path("get-current-usd/", views.get_usd_rate, name="get_usd"),
+
+    path("currency/<str:currency_code>/", views.get_currency_rate, name='get_currency'),
+    path("currencies", views.get_available_currencies, name='available_currencies'),
 ]

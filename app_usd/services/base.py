@@ -1,0 +1,90 @@
+from abc import ABC, abstractmethod
+from typing import Optional
+from django.core.cache import cache
+from django.utils import timezone
+
+from app_usd.models import ExchangeRate
+
+class RateFetcher(ABC):
+    """Абстрактный класс, для получения курса валют"""
+
+    @abstractmethod
+    def get_rate(self) -> float:
+        """Возвращает курсы валют"""
+        pass
+
+    @abstractmethod
+    def get_currency_code(self) -> str:
+        """Возвращает код валюты, например (USD)"""
+        pass
+
+class CacheManager:
+    """Класс для управления кэшем"""
+
+    def __init__(self, cache_key: str, cooldown: int = 10):
+        self.cache_key = cache_key
+        self.cooldown = cooldown
+
+    def check_make_request(self) -> tuple[bool, str]:
+        """Проверяем, таймер запроса"""
+        last_request = cache.get(self.cache_key)
+        now = timezone.now()
+
+        if last_request and (now - last_request).seconds < self.cooldown:
+            time_to_wait = self.cooldown - (now - last_request).seconds
+            return False, f"Подождите {time_to_wait} секунд"
+
+        return True, ""
+
+    def update_cache(self):
+        """Обновляем время последнего запроса в кэше"""
+        cache.set(self.cache_key, timezone.now(), timeout=self.cooldown)
+
+class DataFormatter:
+    """Класс для форматирования данных"""
+
+    @staticmethod
+    def format_timestamp(dt) -> str:
+        """Форматируем timestamp"""
+        return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    @staticmethod
+    def format_rate_data(rate_obj) -> dict:
+        """Форматируем данные курса валют для ответа"""
+        return {
+            "rate": str(rate_obj.rate),
+            "currency": rate_obj.currency,
+            "timestamp": DataFormatter.format_timestamp(rate_obj.timestamp),
+            "timestamp_readable": rate_obj.timestamp.strftime("%d.%m.%Y %H:%M:%S")
+        }
+
+class DataBaseManager:
+    """Класс для работы с БД"""
+
+    def __init__(self, currency_code: str):
+        """
+        :param currency_code: Код валюты с которой работает менеджер
+        """
+        if not currency_code:
+            raise ValueError("Необходимо добавить код валюты")
+
+        self.currency_code = currency_code.upper()
+
+    def save_rate(self, rate: float) -> ExchangeRate:
+        """Сохраняем курс валют в БД"""
+        return ExchangeRate.objects.create(
+            rate=rate,
+            currency=self.currency_code
+        )
+
+    def get_last_rates(self, limit: int = 10):
+        """Получаем последние 10 запросов, по курсу этой валюты"""
+        return ExchangeRate.objects.filter(
+            currency=self.currency_code
+        ).order_by("-timestamp")[:limit]
+
+    def get_last_rate(self) -> Optional[ExchangeRate]:
+        """Получаем последний сохраненный курс текущий валюты"""
+        return ExchangeRate.objects.filter(
+            currency=self.currency_code
+        ).latest("timestamp")
