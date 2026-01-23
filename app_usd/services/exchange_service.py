@@ -82,7 +82,7 @@ class ExchangeService:
         # Обновляем кэш
         self.cache_manager.update_cache()
         # Получаем историю
-        last_rates = self.db_manager.get_last_rates()
+        last_rates = self.db_manager.get_last_rates(exclude_latest=True)
         # Формируем ответ
         return {
             # "status": "success", # по желанию
@@ -106,7 +106,7 @@ class ExchangeService:
         # Проверяем кэш
         can_request, message = self.cache_manager.check_make_request()
         if not can_request:
-            last_rates = self.db_manager.get_last_rates()
+            last_rates = self.db_manager.get_last_rates(exclude_latest=True)
             return JsonResponse(
                 {
                     "status": "error",

@@ -60,11 +60,16 @@ class DataBaseManager:
         """Сохраняем курс валют в БД"""
         return ExchangeRate.objects.create(rate=rate, currency=self.currency_code)
 
-    def get_last_rates(self, limit: int = 10):
+    def get_last_rates(self, limit: int = 10, exclude_latest: bool = False) -> list:
         """Получаем последние 10 запросов, по курсу этой валюты"""
-        rates = ExchangeRate.objects.filter(currency=self.currency_code).order_by(
-            "-timestamp"
-        )[:limit]
+        queryset = ExchangeRate.objects.filter(currency=self.currency_code)
+        if exclude_latest:
+            # Получаем ID Самой последней записи
+            latest = queryset.order_by("-timestamp").first()
+            if latest:
+                queryset = queryset.exclude(id=latest.id)
+
+        rates = queryset.order_by("-timestamp")[:limit]
         return [rate.to_dict() for rate in rates]
 
     def get_last_rate(self) -> Optional[ExchangeRate]:
