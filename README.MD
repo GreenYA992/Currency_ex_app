@@ -57,12 +57,12 @@ python manage.py runserver
 ### Для добавления новой валюты (Динамический Endpoint)
 
 - создаем новый класс в currency_fetchers
-- регистрируем его во view
+- регистрируем его во view, в CURRENCY_MAPPING
 
 ### Для добавления новой валюты через отдельный Endpoint
 
 - создаем новый класс в currency_fetchers
-- регистрируем его в _currency_registry, в классе ExchangeServiceFactory
+- регистрируем его во view, в CURRENCY_MAPPING
 - пишем новый Endpoint для него 
 
 ## Curl

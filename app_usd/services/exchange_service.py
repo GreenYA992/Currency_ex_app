@@ -4,7 +4,6 @@ from django.http import JsonResponse
 from django.utils import timezone
 
 from .base import CacheManager, DataBaseManager, RateFetcher
-from .currency_fetchers import USDRateFetchers
 
 
 class ExchangeService:
@@ -31,15 +30,6 @@ class ExchangeService:
 
         # Время создания
         self.request_time = timezone.now()
-
-    def _check_request_allowed(self) -> None:
-        """
-        Проверяем, можно ли выполнить запрос к API
-        :return: None
-        """
-        can_request, message = self.cache_manager.check_make_request()
-        if not can_request:
-            raise Exception(message)
 
     def _fetch_exchange_rate(self) -> float:
         """
@@ -98,9 +88,9 @@ class ExchangeService:
                 "message": "Используются данные из БД",
                 "currency": self.currency_code,
                 "current_rate": float(last_rate.rate) if last_rate else None,
-                "last_rates": last_rates,
                 "data_source": "database",
                 "timestamp": last_rate.timestamp_readable,
+                "last_rates": last_rates,
             }
         except Exception as e:
             print(f"Ошибка при получении fallback данных: {e}")
@@ -119,8 +109,6 @@ class ExchangeService:
         Основной метод: получаем курс, сохраняем в БД и получаем результат
         :return: Словарь с результатом
         """
-        # Проверяем возможность запроса
-        self._check_request_allowed()
         # Получаем курс от API
         current_rate = self._fetch_exchange_rate()
         # Сохраняем в БД
@@ -143,13 +131,29 @@ class ExchangeService:
     def get_response(self, request=None) -> JsonResponse:
         """Возвращает JsonResponse с результатом работы сервиса"""
         _request = request
+        last_rates = self._get_formatted_history()
+
+        # Проверяем кэш
+        can_request, message = self.cache_manager.check_make_request()
+        if not can_request:
+            return JsonResponse({
+                "status": "error",
+                "currency": self.currency_code,
+                "message": str(message),
+                "current_rate": None,
+                "last_rates": last_rates,
+            }, status=429, json_dumps_params={"indent":2, "ensure_ascii": False})
+
+        # Если кэш разрешил, делаем запрос к API
         try:
             result = self.execute()
             return JsonResponse(
                 result, json_dumps_params={"indent": 2, "ensure_ascii": False}
             )
         except Exception as e:
+            # Ошибка при запросе к API
             try:
+                # Пытаемся сделать Fallback
                 fallback_data = self._get_fallback_data()
                 if fallback_data["current_rate"] is not None:
                     status_code = 200
@@ -170,46 +174,8 @@ class ExchangeService:
                         "message": f"Ошибка: {str(e)}",
                         "fallback_error": str(fallback_error),
                         "current_rate": None,
-                        "last_rates": [],
                         "timestamp": self.request_time.strftime("%d.%m.%Y %H:%M:%S"),
                         "data_source": "Error",
-                    }
+                        "last_rates": [],
+                    }, status=429, json_dumps_params={"indent":2, "ensure_ascii": False}
                 )
-
-
-class ExchangeServiceFactory:
-    """Фабрика для создания ExchangeService для разных валют"""
-
-    # Регистрируем доступные валюты
-    _currency_registry = {
-        "USD": USDRateFetchers,
-    }
-
-    @classmethod
-    def registry_currency(cls, currency_code: str, fetcher_class: Type[RateFetcher]):
-        """Регистрируем новую валюту"""
-        cls._currency_registry[currency_code.upper()] = fetcher_class
-
-    @classmethod
-    def get_supported_currencies(cls) -> list:
-        """Возвращаем список доступных валют"""
-        return list(cls._currency_registry.keys())
-
-    @classmethod
-    def create_service(cls, currency_code: str) -> ExchangeService:
-        """
-        Создаем сервис для указанной валюты
-        :param currency_code: Код валюты (USD)
-        :return: ExchangeService для указанной валюты
-        """
-        currency_code = currency_code.upper()
-
-        if currency_code not in cls._currency_registry:
-            supported = ", ".join(cls.get_supported_currencies())
-            raise ValueError(
-                f"валюта '{currency_code}' не поддерживается. "
-                f"Доступные валюты: {supported}"
-            )
-
-        fetcher_class = cls._currency_registry[currency_code]
-        return ExchangeService(fetcher_class)

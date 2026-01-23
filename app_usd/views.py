@@ -2,16 +2,18 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 
 from .services.currency_fetchers import USDRateFetchers, EURRateFetchers
-from .services.exchange_service import ExchangeServiceFactory
+from .services.exchange_service import ExchangeService
 
-ExchangeServiceFactory.registry_currency("USD", USDRateFetchers)
-ExchangeServiceFactory.registry_currency("EUR", EURRateFetchers)
+CURRENCY_MAPPING = {
+    "USD": USDRateFetchers,
+    "EUR": EURRateFetchers,
+}
 
 
 @require_GET
 def get_usd_rate(request):
     """Получаем курс для USD, явно указываем валюту"""
-    service = ExchangeServiceFactory.create_service("USD")
+    service = ExchangeService(USDRateFetchers)
     return service.get_response(request)
 
 
@@ -21,27 +23,22 @@ def get_currency_rate(request, currency_code: str):
     Универсальный способ для всех зарегистрированных валют.
     Пример: /currency/USD/
     """
-
-    try:
-        service = ExchangeServiceFactory.create_service(currency_code)
-        return service.get_response(request)
-    except ValueError as e:
-        return JsonResponse(
-            {
-                "status": "error",
-                "message": str(e),
-                "supported_currencies": ExchangeServiceFactory.get_supported_currencies(),
-            },
-            status=400,
-        )
+    currency_code = currency_code.upper()
+    if currency_code not in CURRENCY_MAPPING:
+        return JsonResponse({
+            "error": f"Валюта '{currency_code}' не поддерживается",
+            "available": list(CURRENCY_MAPPING.keys())
+        }, status=400)
+    fetcher_class = CURRENCY_MAPPING[currency_code]
+    service = ExchangeService(fetcher_class)
+    return service.get_response(request)
 
 
 @require_GET
 def get_available_currencies(request):
     """Возвращает список всех доступных валют"""
+    _request = request
     return JsonResponse(
-        {
-            "status": "success",
-            "currencies": ExchangeServiceFactory.get_supported_currencies(),
-        }
+        {"Доступные валюты": list(CURRENCY_MAPPING.keys())},
+        json_dumps_params={"ensure_ascii": False}
     )
