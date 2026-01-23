@@ -31,35 +31,6 @@ class ExchangeService:
         # Время создания
         self.request_time = timezone.now()
 
-    def _fetch_exchange_rate(self) -> float:
-        """
-        Получаем текущий курс от API
-        :return: текущий курс валюты
-        """
-        try:
-            return self.currency_fetcher.get_rate()
-        except Exception as e:
-            print(f"Ошибка при получении курса {self.currency_code}: {e}")
-            raise Exception(f"Не удалось получить курс {self.currency_code}: {str(e)}")
-
-    def _save_rate_database(self, rate: float):
-        """
-        Сохраняем курс в БД
-        :param rate: значение курса
-        :return: созданный объект ExchangeRate
-        """
-        try:
-            return self.db_manager.save_rate(rate)
-        except Exception as e:
-            print(f"Ошибка при сохранении в БД: {e}")
-            raise Exception(f"Не удалось сохранить в БД: {e}")
-
-    def _update_cache(self) -> None:
-        """
-        Обновляем кэш времени последнего запроса
-        :return: None
-        """
-        self.cache_manager.update_cache()
 
     def _get_formatted_history(self, limit: int = 10) -> list:
         """
@@ -110,11 +81,19 @@ class ExchangeService:
         :return: Словарь с результатом
         """
         # Получаем курс от API
-        current_rate = self._fetch_exchange_rate()
+        try:
+            current_rate = self.currency_fetcher.get_rate()
+        except Exception as e:
+            print(f"Ошибка при получении курса {self.currency_code}: {e}")
+            raise Exception(f"Не удалось получить курс {self.currency_code}: {str(e)}")
         # Сохраняем в БД
-        rate_obj = self._save_rate_database(current_rate)
+        try:
+            rate_obj = self.db_manager.save_rate(current_rate)
+        except Exception as e:
+            print(f"Ошибка при сохранении в БД: {e}")
+            raise Exception(f"Не удалось сохранить в БД: {e}")
         # Обновляем кэш
-        self._update_cache()
+        self.cache_manager.update_cache()
         # Получаем историю
         last_rates = self._get_formatted_history()
         # Формируем ответ
