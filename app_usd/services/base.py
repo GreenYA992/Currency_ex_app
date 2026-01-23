@@ -62,9 +62,10 @@ class DataBaseManager:
 
     def get_last_rates(self, limit: int = 10):
         """Получаем последние 10 запросов, по курсу этой валюты"""
-        return ExchangeRate.objects.filter(currency=self.currency_code).order_by(
+        rates = ExchangeRate.objects.filter(currency=self.currency_code).order_by(
             "-timestamp"
         )[:limit]
+        return [rate.to_dict() for rate in rates]
 
     def get_last_rate(self) -> Optional[ExchangeRate]:
         """Получаем последний сохраненный курс текущий валюты"""

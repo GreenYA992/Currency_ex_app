@@ -31,20 +31,6 @@ class ExchangeService:
         # Время создания
         self.request_time = timezone.now()
 
-
-    def _get_formatted_history(self, limit: int = 10) -> list:
-        """
-        Получаем и форматируем историю курсов
-        :param limit: количество последних записей
-        :return: список отформатированных записей
-        """
-        try:
-            last_rates = self.db_manager.get_last_rates(limit=limit)
-            return [rate.to_dict() for rate in last_rates]
-        except Exception as e:
-            print(f"Ошибка при получении истории: {e}")
-            return []
-
     def _get_fallback_data(self) -> dict:
         """
         Возвращаем данные из БД при ошибке API
@@ -52,7 +38,7 @@ class ExchangeService:
         """
         try:
             last_rate = self.db_manager.get_last_rate()
-            last_rates = self._get_formatted_history()
+            last_rates = self.db_manager.get_last_rates()
 
             return {
                 "status": "Ошибка API",
@@ -77,6 +63,7 @@ class ExchangeService:
 
     def execute(self) -> dict:
         """
+        Делаем запрос.
         Основной метод: получаем курс, сохраняем в БД и получаем результат
         :return: Словарь с результатом
         """
@@ -95,7 +82,7 @@ class ExchangeService:
         # Обновляем кэш
         self.cache_manager.update_cache()
         # Получаем историю
-        last_rates = self._get_formatted_history()
+        last_rates = self.db_manager.get_last_rates()
         # Формируем ответ
         return {
             # "status": "success", # по желанию
@@ -108,20 +95,29 @@ class ExchangeService:
         }
 
     def get_response(self, request=None) -> JsonResponse:
-        """Возвращает JsonResponse с результатом работы сервиса"""
+        """
+        Получаем(выводим) ответ.
+        Возвращает JsonResponse с результатом работы сервиса
+        :param request: None
+        :return: JsonResponse
+        """
         _request = request
-        last_rates = self._get_formatted_history()
 
         # Проверяем кэш
         can_request, message = self.cache_manager.check_make_request()
         if not can_request:
-            return JsonResponse({
-                "status": "error",
-                "currency": self.currency_code,
-                "message": str(message),
-                "current_rate": None,
-                "last_rates": last_rates,
-            }, status=429, json_dumps_params={"indent":2, "ensure_ascii": False})
+            last_rates = self.db_manager.get_last_rates()
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "currency": self.currency_code,
+                    "message": str(message),
+                    "current_rate": None,
+                    "last_rates": last_rates,
+                },
+                status=429,
+                json_dumps_params={"indent": 2, "ensure_ascii": False},
+            )
 
         # Если кэш разрешил, делаем запрос к API
         try:
@@ -156,5 +152,7 @@ class ExchangeService:
                         "timestamp": self.request_time.strftime("%d.%m.%Y %H:%M:%S"),
                         "data_source": "Error",
                         "last_rates": [],
-                    }, status=429, json_dumps_params={"indent":2, "ensure_ascii": False}
+                    },
+                    status=429,
+                    json_dumps_params={"indent": 2, "ensure_ascii": False},
                 )

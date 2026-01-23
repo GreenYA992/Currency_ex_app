@@ -17,6 +17,7 @@ class USDRateFetchers(RateFetcher):
     def get_currency_code(self) -> str:
         return "USD"
 
+
 class EURRateFetchers(RateFetcher):
     """Получаем курс EUR от ЦБ"""
 
