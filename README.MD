@@ -29,7 +29,10 @@ source venv/bin/activate
 ```
 ### 3. Установка зависимостей 
 ```bash
-pip install requirements.txt
+cd Curr_exchange_rate 
+```
+```bash
+pip install -r requirements.txt
 ```
 ### 4. Настройка БД
 ```bash
