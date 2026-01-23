@@ -1,10 +1,11 @@
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 
-from .services.currency_fetchers import USDRateFetchers
+from .services.currency_fetchers import USDRateFetchers, EURRateFetchers
 from .services.exchange_service import ExchangeServiceFactory
 
 ExchangeServiceFactory.registry_currency("USD", USDRateFetchers)
+ExchangeServiceFactory.registry_currency("EUR", EURRateFetchers)
 
 
 @require_GET
@@ -18,7 +19,7 @@ def get_usd_rate(request):
 def get_currency_rate(request, currency_code: str):
     """
     Универсальный способ для всех зарегистрированных валют.
-    Пример: /api/currency/USD/
+    Пример: /currency/USD/
     """
 
     try:
