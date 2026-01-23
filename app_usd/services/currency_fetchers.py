@@ -1,5 +1,7 @@
-from .base import RateFetcher
 import requests
+
+from .base import RateFetcher
+
 
 class USDRateFetchers(RateFetcher):
     """Получаем курс USD от ЦБ"""
@@ -10,7 +12,7 @@ class USDRateFetchers(RateFetcher):
         response = requests.get(self.API_URL, timeout=5)
         response.raise_for_status()
         data = response.json()
-        return float(data['Valute']['USD']['Value'])
+        return float(data["Valute"]["USD"]["Value"])
 
     def get_currency_code(self) -> str:
         return "USD"

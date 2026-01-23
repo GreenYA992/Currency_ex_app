@@ -1,8 +1,11 @@
 from typing import Type
+
 from django.http import JsonResponse
 from django.utils import timezone
-from .base import CacheManager, DataFormatter, DataBaseManager, RateFetcher
+
+from .base import CacheManager, DataBaseManager, RateFetcher
 from .currency_fetchers import USDRateFetchers
+
 
 class ExchangeService:
     """Основной сервис для получения и обработки курсов валют
@@ -14,9 +17,7 @@ class ExchangeService:
         :param currency_fetcher_class: класс для получения валюты
         """
         if currency_fetcher_class is None:
-            raise ValueError(
-                "currency_fetcher_class - обязательный параметр"
-            )
+            raise ValueError("currency_fetcher_class - обязательный параметр")
 
         # Инициализируем Fetcher
         self.currency_fetcher = currency_fetcher_class()
@@ -24,17 +25,18 @@ class ExchangeService:
 
         # Инициализируем менеджер с привязкой к валюте
         self.cache_manager = CacheManager(
-            cache_key=f"exchange_last_request_{self.currency_code}",
-            cooldown=10
+            cache_key=f"exchange_last_request_{self.currency_code}", cooldown=10
         )
-        self.data_formatter = DataFormatter()
         self.db_manager = DataBaseManager(currency_code=self.currency_code)
 
         # Время создания
         self.request_time = timezone.now()
 
     def _check_request_allowed(self) -> None:
-        """Проверяем, можно ли выполнить запрос к API"""
+        """
+        Проверяем, можно ли выполнить запрос к API
+        :return: None
+        """
         can_request, message = self.cache_manager.check_make_request()
         if not can_request:
             raise Exception(message)
@@ -62,8 +64,11 @@ class ExchangeService:
             print(f"Ошибка при сохранении в БД: {e}")
             raise Exception(f"Не удалось сохранить в БД: {e}")
 
-    def _update_cache(self):
-        """Обновляем кэш времени последнего запроса"""
+    def _update_cache(self) -> None:
+        """
+        Обновляем кэш времени последнего запроса
+        :return: None
+        """
         self.cache_manager.update_cache()
 
     def _get_formatted_history(self, limit: int = 10) -> list:
@@ -74,10 +79,7 @@ class ExchangeService:
         """
         try:
             last_rates = self.db_manager.get_last_rates(limit=limit)
-            return [
-                self.data_formatter.format_rate_data(rate)
-                for rate in last_rates
-            ]
+            return [rate.to_dict() for rate in last_rates]
         except Exception as e:
             print(f"Ошибка при получении истории: {e}")
             return []
@@ -98,7 +100,7 @@ class ExchangeService:
                 "current_rate": float(last_rate.rate) if last_rate else None,
                 "last_rates": last_rates,
                 "data_source": "database",
-                "timestamp": self.data_formatter.format_timestamp(self.request_time)
+                "timestamp": last_rate.timestamp_readable,
             }
         except Exception as e:
             print(f"Ошибка при получении fallback данных: {e}")
@@ -109,7 +111,7 @@ class ExchangeService:
                 "current_rate": None,
                 "last_rates": [],
                 "data_source": None,
-                "timestamp": self.data_formatter.format_timestamp(self.request_time)
+                "timestamp": self.request_time.strftime("%d.%m.%Y %H:%M:%S"),
             }
 
     def execute(self) -> dict:
@@ -129,22 +131,22 @@ class ExchangeService:
         last_rates = self._get_formatted_history()
         # Формируем ответ
         return {
-                "status": "success",
-                "currency": self.currency_code,
-                "current_rate": current_rate,
-                "last_rates": last_rates,
-                "timestamp": self.data_formatter.format_timestamp(rate_obj.timestamp),
-                "request_id": str(rate_obj.id),
-                "data_source": "api",
-            }
+            # "status": "success", # по желанию
+            "currency": self.currency_code,
+            "current_rate": current_rate,
+            "timestamp": rate_obj.timestamp_readable,
+            # "request_id": str(rate_obj.id), # по желанию
+            # "data_source": "api", # по желанию
+            "last_rates": last_rates,  # список предыдущих запросов
+        }
 
     def get_response(self, request=None) -> JsonResponse:
         """Возвращает JsonResponse с результатом работы сервиса"""
+        _request = request
         try:
             result = self.execute()
             return JsonResponse(
-                result,
-                json_dumps_params={"indent": 2, "ensure_ascii": False}
+                result, json_dumps_params={"indent": 2, "ensure_ascii": False}
             )
         except Exception as e:
             try:
@@ -157,27 +159,30 @@ class ExchangeService:
                 return JsonResponse(
                     fallback_data,
                     json_dumps_params={"indent": 2, "ensure_ascii": False},
-                    status=status_code
+                    status=status_code,
                 )
             except Exception as fallback_error:
                 # если даже fallback не сработал
-                return JsonResponse({
-                    "status": "error",
-                    "currency": self.currency_code,
-                    "message": f"Ошибка: {str(e)}",
-                    "fallback_error": str(fallback_error),
-                    "current_rate": None,
-                    "last_rates": [],
-                    "timestamp": self.data_formatter.format_timestamp(self.request_time),
-                    "data_source": "Error",
-                })
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "currency": self.currency_code,
+                        "message": f"Ошибка: {str(e)}",
+                        "fallback_error": str(fallback_error),
+                        "current_rate": None,
+                        "last_rates": [],
+                        "timestamp": self.request_time.strftime("%d.%m.%Y %H:%M:%S"),
+                        "data_source": "Error",
+                    }
+                )
+
 
 class ExchangeServiceFactory:
     """Фабрика для создания ExchangeService для разных валют"""
 
     # Регистрируем доступные валюты
     _currency_registry = {
-        'USD': USDRateFetchers,
+        "USD": USDRateFetchers,
     }
 
     @classmethod
