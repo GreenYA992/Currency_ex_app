@@ -59,14 +59,15 @@ python manage.py runserver
 
 ### Для добавления новой валюты (Динамический Endpoint)
 
-- создаем новый класс в currency_fetchers
-- регистрируем его во view, в CURRENCY_MAPPING
+- в currency_fetchers.py, в SUPPORTED_CODES добавляем валюту
+- регистрируем его во view.py, в SUPPORTED_CURRENCIES
 
 ### Для добавления новой валюты через отдельный Endpoint
 
-- создаем новый класс в currency_fetchers
-- регистрируем его во view, в CURRENCY_MAPPING
-- пишем новый Endpoint для него 
+- в currency_fetchers.py, в SUPPORTED_CODES добавляем валюту
+- регистрируем его во view.py, в SUPPORTED_CURRENCIES
+- пишем отдельную view функцию.
+- добавляем новый путь в urls
 
 ## Curl
 - Курс USD
