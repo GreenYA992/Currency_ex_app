@@ -1,5 +1,5 @@
 """
-URL configuration for get_current_usd project.
+URL configuration for get_current_currency project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.2/topics/http/urls/
@@ -20,5 +20,5 @@ from django.urls import include, path
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("", include("app_usd.urls")),
+    path("", include("app_currency.urls")),
 ]

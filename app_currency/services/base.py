@@ -4,7 +4,7 @@ from typing import Optional
 from django.core.cache import cache
 from django.utils import timezone
 
-from app_usd.models import ExchangeRate
+from app_currency.models import ExchangeRate
 
 
 class RateFetcher(ABC):
