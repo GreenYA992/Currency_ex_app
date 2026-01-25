@@ -1,21 +1,18 @@
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 
-from .services.currency_fetchers import EURRateFetchers, USDRateFetchers
+from .services.currency_fetchers import CBRRateFetcher
 from .services.exchange_service import ExchangeService
 
-CURRENCY_MAPPING = {
-    "USD": USDRateFetchers,
-    "EUR": EURRateFetchers,
-}
 
+SUPPORTED_CURRENCIES = ["USD","EUR"]
 
 @require_GET
 def get_usd_rate(request):
     """Получаем курс для USD, явно указываем валюту"""
-    service = ExchangeService(USDRateFetchers)
+    fetcher = CBRRateFetcher(currency_code="USD")
+    service = ExchangeService(fetcher)
     return service.get_response(request)
-
 
 @require_GET
 def get_currency_rate(request, currency_code: str):
@@ -24,16 +21,17 @@ def get_currency_rate(request, currency_code: str):
     Пример: /currency/USD/
     """
     currency_code = currency_code.upper()
-    if currency_code not in CURRENCY_MAPPING:
+    if currency_code not in SUPPORTED_CURRENCIES:
         return JsonResponse(
             {
                 "error": f"Валюта '{currency_code}' не поддерживается",
-                "available": list(CURRENCY_MAPPING.keys()),
+                "available": SUPPORTED_CURRENCIES,
             },
             status=400,
         )
-    fetcher_class = CURRENCY_MAPPING[currency_code]
-    service = ExchangeService(fetcher_class)
+
+    fetcher = CBRRateFetcher(currency_code=currency_code)
+    service = ExchangeService(fetcher)
     return service.get_response(request)
 
 
@@ -42,6 +40,6 @@ def get_available_currencies(request):
     """Возвращает список всех доступных валют"""
     _request = request
     return JsonResponse(
-        {"Доступные валюты": list(CURRENCY_MAPPING.keys())},
+        {"Доступные валюты": SUPPORTED_CURRENCIES},
         json_dumps_params={"ensure_ascii": False},
     )

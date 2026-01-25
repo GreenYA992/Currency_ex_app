@@ -33,9 +33,9 @@ class CacheManager:
         last_request = cache.get(self.cache_key)
         now = timezone.now()
 
-        if last_request and (now - last_request).seconds < self.cooldown:
-            time_to_wait = self.cooldown - (now - last_request).seconds
-            return False, f"Подождите {time_to_wait} секунд"
+        if last_request and (now - last_request).total_seconds() < self.cooldown:
+            time_to_wait = self.cooldown - (now - last_request).total_seconds()
+            return False, f"Подождите {int(time_to_wait)} секунд"
 
         return True, ""
 

@@ -11,7 +11,7 @@ class ExchangeService:
     каждый экземпляр работает с конкретной валютой
     """
 
-    def __init__(self, currency_fetcher_class: Type[RateFetcher]):
+    def __init__(self, currency_fetcher_class: RateFetcher):
         """
         :param currency_fetcher_class: класс для получения валюты
         """
@@ -19,7 +19,7 @@ class ExchangeService:
             raise ValueError("currency_fetcher_class - обязательный параметр")
 
         # Инициализируем Fetcher
-        self.currency_fetcher = currency_fetcher_class()
+        self.currency_fetcher = currency_fetcher_class
         self.currency_code = self.currency_fetcher.get_currency_code()
 
         # Инициализируем менеджер с привязкой к валюте
