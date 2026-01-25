@@ -4,8 +4,8 @@ from django.views.decorators.http import require_GET
 from .services.currency_fetchers import CBRRateFetcher
 from .services.exchange_service import ExchangeService
 
+SUPPORTED_CURRENCIES = ["USD", "EUR"]
 
-SUPPORTED_CURRENCIES = ["USD","EUR"]
 
 @require_GET
 def get_usd_rate(request):
@@ -13,6 +13,7 @@ def get_usd_rate(request):
     fetcher = CBRRateFetcher(currency_code="USD")
     service = ExchangeService(fetcher)
     return service.get_response(request)
+
 
 @require_GET
 def get_currency_rate(request, currency_code: str):
