@@ -48,13 +48,17 @@ python manage.py runserver
 
 ### Получить курс USD (как в ТЗ)
 ```text
-/get-current-usd/
+http://127.0.0.1:8000/get-current-usd/
 ```
 ### Динамический Endpoint (удобнее и универсальнее)
 
 - вместо /usd/ может быть другая валюта, пока добавил только /eur/
 ```text
-/currency/usd/
+http://127.0.0.1:8000/currency/usd/
+```
+### Получить список доступных валют
+```text
+http://127.0.0.1:8000/currencies
 ```
 
 ### Для добавления новой валюты (Динамический Endpoint)
