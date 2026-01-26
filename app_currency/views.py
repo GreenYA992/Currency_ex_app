@@ -6,6 +6,7 @@ from .services.exchange_service import ExchangeService
 
 SUPPORTED_CURRENCIES = ["USD", "EUR"]
 
+
 @require_GET
 def get_currency_rate(request, currency_code: str):
     """
