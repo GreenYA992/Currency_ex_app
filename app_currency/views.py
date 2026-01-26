@@ -11,7 +11,8 @@ SUPPORTED_CURRENCIES = ["USD", "EUR"]
 def get_currency_rate(request, currency_code: str):
     """
     Универсальный способ для всех зарегистрированных валют.
-    Пример: /currency/USD/
+    Пример: /get-current-<str:currency_code>/
+    или /get-current-usd/
     """
     currency_code = currency_code.upper()
     if currency_code not in SUPPORTED_CURRENCIES:
