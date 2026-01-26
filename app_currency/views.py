@@ -28,9 +28,8 @@ def get_currency_rate(request, currency_code: str):
 
 
 @require_GET
-def get_available_currencies(request):
+def get_available_currencies(_request):
     """Возвращает список всех доступных валют"""
-    _request = request
     return JsonResponse(
         {"Доступные валюты": SUPPORTED_CURRENCIES},
         json_dumps_params={"ensure_ascii": False},

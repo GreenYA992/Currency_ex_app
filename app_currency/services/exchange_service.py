@@ -94,14 +94,13 @@ class ExchangeService:
             "last_rates": last_rates,  # список предыдущих запросов
         }
 
-    def get_response(self, request=None) -> JsonResponse:
+    def get_response(self, _request=None) -> JsonResponse:
         """
         Получаем(выводим) ответ.
         Возвращает JsonResponse с результатом работы сервиса
-        :param request: None
+        :param _request: None
         :return: JsonResponse
         """
-        _request = request
 
         # Проверяем кэш
         can_request, message = self.cache_manager.check_make_request()
