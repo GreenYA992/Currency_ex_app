@@ -68,13 +68,9 @@ http://127.0.0.1:8000/currencies/
 ```bash
 curl http://127.0.0.1:8000/get-current-usd/
 ```
-- Курс USD
-```bash
-curl http://127.0.0.1:8000/currency/usd/
-```
 - Курс EUR
 ```bash
-curl http://127.0.0.1:8000/currency/eur/
+curl http://127.0.0.1:8000/get-current-eur/
 ```
 - Список доступных валют
 ```bash
