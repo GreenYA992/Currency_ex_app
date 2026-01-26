@@ -6,15 +6,6 @@ from .services.exchange_service import ExchangeService
 
 SUPPORTED_CURRENCIES = ["USD", "EUR"]
 
-
-@require_GET
-def get_usd_rate(request):
-    """Получаем курс для USD, явно указываем валюту"""
-    fetcher = CBRRateFetcher(currency_code="USD")
-    service = ExchangeService(fetcher)
-    return service.get_response(request)
-
-
 @require_GET
 def get_currency_rate(request, currency_code: str):
     """
