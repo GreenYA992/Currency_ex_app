@@ -1,5 +1,3 @@
-from typing import Type
-
 from django.http import JsonResponse
 from django.utils import timezone
 
@@ -24,7 +22,8 @@ class ExchangeService:
 
         # Инициализируем менеджер с привязкой к валюте
         self.cache_manager = CacheManager(
-            cache_key=f"exchange_last_request_{self.currency_code}", cooldown=10
+            cache_key=f"exchange_last_request_{self.currency_code}",
+            cooldown=10,
         )
         self.db_manager = DataBaseManager(currency_code=self.currency_code)
 
@@ -72,7 +71,9 @@ class ExchangeService:
             current_rate = self.currency_fetcher.get_rate()
         except Exception as e:
             print(f"Ошибка при получении курса {self.currency_code}: {e}")
-            raise Exception(f"Не удалось получить курс {self.currency_code}: {str(e)}")
+            raise Exception(
+                f"Не удалось получить курс {self.currency_code}: {str(e)}"
+            )
         # Сохраняем в БД
         try:
             rate_obj = self.db_manager.save_rate(current_rate)
@@ -148,7 +149,9 @@ class ExchangeService:
                         "message": f"Ошибка: {str(e)}",
                         "fallback_error": str(fallback_error),
                         "current_rate": None,
-                        "timestamp": self.request_time.strftime("%d.%m.%Y %H:%M:%S"),
+                        "timestamp": self.request_time.strftime(
+                            "%d.%m.%Y %H:%M:%S"
+                        ),
                         "data_source": "Error",
                         "last_rates": [],
                     },

@@ -33,7 +33,10 @@ class CacheManager:
         last_request = cache.get(self.cache_key)
         now = timezone.now()
 
-        if last_request and (now - last_request).total_seconds() < self.cooldown:
+        if (
+            last_request
+            and (now - last_request).total_seconds() < self.cooldown
+        ):
             time_to_wait = self.cooldown - (now - last_request).total_seconds()
             return False, f"Подождите {int(time_to_wait)} секунд"
 
@@ -58,9 +61,13 @@ class DataBaseManager:
 
     def save_rate(self, rate: float) -> ExchangeRate:
         """Сохраняем курс валют в БД"""
-        return ExchangeRate.objects.create(rate=rate, currency=self.currency_code)
+        return ExchangeRate.objects.create(
+            rate=rate, currency=self.currency_code
+        )
 
-    def get_last_rates(self, limit: int = 10, exclude_latest: bool = False) -> list:
+    def get_last_rates(
+        self, limit: int = 10, exclude_latest: bool = False
+    ) -> list:
         """Получаем последние 10 запросов, по курсу этой валюты"""
         queryset = ExchangeRate.objects.filter(currency=self.currency_code)
         if exclude_latest:
