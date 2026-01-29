@@ -1,8 +1,8 @@
 from django.db import models
+from django.db.models import Manager
 from django.utils import timezone
 
 from .config import TIME_FORMATS
-from django.db.models import Manager
 
 
 class ExchangeRate(models.Model):
