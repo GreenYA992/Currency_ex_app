@@ -2,7 +2,9 @@
 SUPPORTED_CURRENCIES = ["USD", "EUR"]
 
 # Ссылки на источник данных
-API_URLS = {"CBR": "https://www.cbr-xml-daily.ru/daily_json.js"}
+API_URLS = {
+    "CBR": "https://www.cbr-xml-daily.ru/daily_json.js",
+}
 
 # Настройки API
 API_SETTINGS = {
@@ -27,4 +29,6 @@ RESPONSE_SETTINGS = {
 }
 
 # Формат времени
-TIME_FORMATS = {"DISPLAY": "%d.%m.%Y %H:%M:%S"}
+TIME_FORMATS = {
+    "DISPLAY": "%d.%m.%Y %H:%M:%S"
+}
