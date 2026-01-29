@@ -60,8 +60,7 @@ http://127.0.0.1:8000/currencies/
 
 ### Для добавления новой валюты
 
-- в currency_fetchers.py, в SUPPORTED_CODES добавляем валюту
-- регистрируем его во view.py, в SUPPORTED_CURRENCIES
+- вносим валюту в app_currency.config.py, в список SUPPORTED_CURRENCIES
 
 ## Curl
 - Курс USD
