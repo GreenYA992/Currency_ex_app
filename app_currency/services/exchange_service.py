@@ -114,7 +114,7 @@ class ExchangeService:
         # Проверяем кэш
         can_request, message = self.cache_manager.check_make_request()
         if not can_request:
-            last_rates = self.db_manager.get_last_rates(exclude_latest=True)
+            last_rates = self.db_manager.get_last_rates(exclude_latest=False)
             return JsonResponse(
                 {
                     "status": "error",

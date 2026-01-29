@@ -2,9 +2,11 @@ from django.db import models
 from django.utils import timezone
 
 from .config import TIME_FORMATS
+from django.db.models import Manager
 
 
 class ExchangeRate(models.Model):
+    objects: Manager
     currency = models.CharField(max_length=3)
     rate = models.DecimalField(max_digits=10, decimal_places=4)
     timestamp = models.DateTimeField(auto_now_add=True)
