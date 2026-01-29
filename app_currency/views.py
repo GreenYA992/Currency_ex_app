@@ -1,10 +1,10 @@
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 
+from app_currency.config import SUPPORTED_CURRENCIES
+
 from .services.currency_fetchers import CBRRateFetcher
 from .services.exchange_service import ExchangeService
-
-SUPPORTED_CURRENCIES = ["USD", "EUR"]
 
 
 @require_GET

@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils import timezone
 
+from .config import TIME_FORMATS
+
 
 class ExchangeRate(models.Model):
     currency = models.CharField(max_length=3)
@@ -14,7 +16,7 @@ class ExchangeRate(models.Model):
     def timestamp_readable(self):
         """Более удобный формат даты и времени с учетом часового пояса"""
         local_time = timezone.localtime(self.timestamp)
-        return local_time.strftime("%d.%m.%Y %H:%M:%S")
+        return local_time.strftime(TIME_FORMATS["DISPLAY"])
 
     def to_dict(self):
         """Сериализация в словарь"""

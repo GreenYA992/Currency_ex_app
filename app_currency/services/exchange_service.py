@@ -1,6 +1,8 @@
 from django.http import JsonResponse
 from django.utils import timezone
 
+from app_currency.config import CACHE_SETTINGS, RESPONSE_SETTINGS, TIME_FORMATS
+
 from .base import CacheManager, DataBaseManager, RateFetcher
 
 
@@ -22,15 +24,15 @@ class ExchangeService:
 
         # Инициализируем менеджер с привязкой к валюте
         self.cache_manager = CacheManager(
-            cache_key=f"exchange_last_request_{self.currency_code}",
-            cooldown=10,
+            cache_key=f"{CACHE_SETTINGS["KEY_PREFIX"]}{self.currency_code}",
+            cooldown=CACHE_SETTINGS["DEFAULT_COOLDOWN"],
         )
         self.db_manager = DataBaseManager(currency_code=self.currency_code)
 
         # Время создания
         self.request_time = timezone.now()
 
-    def _get_fallback_data(self) -> dict:
+    def _get_fallback_data(self) -> dict:  # dict
         """
         Возвращаем данные из БД при ошибке API
         :return: словарь с данными из БД
@@ -57,7 +59,9 @@ class ExchangeService:
                 "current_rate": None,
                 "last_rates": [],
                 "data_source": None,
-                "timestamp": self.request_time.strftime("%d.%m.%Y %H:%M:%S"),
+                "timestamp": self.request_time.strftime(
+                    TIME_FORMATS["DISPLAY"]
+                ),
             }
 
     def execute(self) -> dict:
@@ -74,24 +78,28 @@ class ExchangeService:
             raise Exception(
                 f"Не удалось получить курс {self.currency_code}: {str(e)}"
             )
+
         # Сохраняем в БД
         try:
             rate_obj = self.db_manager.save_rate(current_rate)
         except Exception as e:
             print(f"Ошибка при сохранении в БД: {e}")
             raise Exception(f"Не удалось сохранить в БД: {e}")
+
         # Обновляем кэш
         self.cache_manager.update_cache()
+
         # Получаем историю
         last_rates = self.db_manager.get_last_rates(exclude_latest=True)
+
         # Формируем ответ
         return {
-            # "status": "success", # по желанию
+            # "status": "success",            # по желанию
+            # "request_id": str(rate_obj.id), # по желанию
+            # "data_source": "api",           # по желанию
             "currency": self.currency_code,
             "current_rate": current_rate,
             "timestamp": rate_obj.timestamp_readable,
-            # "request_id": str(rate_obj.id), # по желанию
-            # "data_source": "api", # по желанию
             "last_rates": last_rates,  # список предыдущих запросов
         }
 
@@ -116,15 +124,13 @@ class ExchangeService:
                     "last_rates": last_rates,
                 },
                 status=429,
-                json_dumps_params={"indent": 2, "ensure_ascii": False},
+                json_dumps_params=RESPONSE_SETTINGS,
             )
 
         # Если кэш разрешил, делаем запрос к API
         try:
             result = self.execute()
-            return JsonResponse(
-                result, json_dumps_params={"indent": 2, "ensure_ascii": False}
-            )
+            return JsonResponse(result, json_dumps_params=RESPONSE_SETTINGS)
         except Exception as e:
             # Ошибка при запросе к API
             try:
@@ -137,7 +143,7 @@ class ExchangeService:
 
                 return JsonResponse(
                     fallback_data,
-                    json_dumps_params={"indent": 2, "ensure_ascii": False},
+                    json_dumps_params=RESPONSE_SETTINGS,
                     status=status_code,
                 )
             except Exception as fallback_error:
@@ -150,11 +156,11 @@ class ExchangeService:
                         "fallback_error": str(fallback_error),
                         "current_rate": None,
                         "timestamp": self.request_time.strftime(
-                            "%d.%m.%Y %H:%M:%S"
+                            TIME_FORMATS["DISPLAY"]
                         ),
                         "data_source": "Error",
                         "last_rates": [],
                     },
                     status=429,
-                    json_dumps_params={"indent": 2, "ensure_ascii": False},
+                    json_dumps_params=RESPONSE_SETTINGS,
                 )

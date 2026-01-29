@@ -4,6 +4,7 @@ from typing import Optional
 from django.core.cache import cache
 from django.utils import timezone
 
+from app_currency.config import CACHE_SETTINGS, DB_SETTINGS
 from app_currency.models import ExchangeRate
 
 
@@ -24,7 +25,11 @@ class RateFetcher(ABC):
 class CacheManager:
     """Класс для управления кэшем"""
 
-    def __init__(self, cache_key: str, cooldown: int = 10):
+    def __init__(
+        self,
+        cache_key: str,
+        cooldown: int = CACHE_SETTINGS["DEFAULT_COOLDOWN"],
+    ):
         self.cache_key = cache_key
         self.cooldown = cooldown
 
@@ -66,7 +71,9 @@ class DataBaseManager:
         )
 
     def get_last_rates(
-        self, limit: int = 10, exclude_latest: bool = False
+        self,
+        limit: int = DB_SETTINGS["DEFAULT_RATE_LIMIT"],
+        exclude_latest: bool = False,
     ) -> list:
         """Получаем последние 10 запросов, по курсу этой валюты"""
         queryset = ExchangeRate.objects.filter(currency=self.currency_code)
